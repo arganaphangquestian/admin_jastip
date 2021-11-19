@@ -1,0 +1,42 @@
+.Container {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.Form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 400px;
+  padding: 32px;
+
+  @media screen and (max-width: 750px) {
+    width: 80%;
+  }
+}
+
+.InputField {
+  width: 100%;
+}
+
+.Input {
+  width: 100%;
+  border: 1px solid #dadada;
+  border-radius: 8px;
+  padding: 16px 32px;
+  margin-bottom: 16px;
+}
+
+.Button {
+  width: 100%;
+  background-color: #000;
+  color: #dadada;
+  border: none;
+  border-radius: 8px;
+  padding: 16px 32px;
+}
