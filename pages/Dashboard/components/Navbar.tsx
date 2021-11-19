@@ -1,9 +1,24 @@
 import React from "react";
+import style from "./Navbar.module.scss";
 
-const Navbar = () => {
+const Navbar: React.FC = () => {
   return (
-    <div>
-      <h1>Navbar</h1>
+    <div className={style.Navbar}>
+      <Avatar name="Argana Phangquestian" />
+    </div>
+  );
+};
+
+const Avatar: React.FC<{ name: string }> = ({ name }) => {
+  return (
+    <div className={style.Avatar}>
+      <p aria-label={name}>
+        {name
+          .split(" ")
+          .map((word) => word.split("")[0])
+          .slice(0, 2)
+          .join("")}
+      </p>
     </div>
   );
 };
