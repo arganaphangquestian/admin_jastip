@@ -1,0 +1,204 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BalanceStatus {
+  DEBIT
+  CREDIT
+}
+
+enum TransactionTransferType {
+  TRANSACTION_PAYMENT
+  SHIPPING_PAYMENT
+}
+
+model User {
+  id                Int           @id @default(autoincrement())
+  name              String
+  email             String        @unique
+  password          String
+  balance           Decimal       @default(0)
+  role              Role          @default(USER)
+  profile           Profile?
+  bank_accounts     BankAccount[]
+  balances          Balance[]
+  jastips           Jastip[]
+  sell_transactions Transaction[] @relation("seller")
+}
+
+model Bank {
+  id            Int           @id @default(autoincrement())
+  name          String
+  code          String        @unique
+  image_url     String?
+  bank_accounts BankAccount[]
+}
+
+model Province {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  profiles Profile[]
+  jastips  Jastip[]
+}
+
+model TransferStatus {
+  id        String     @id
+  name      String
+  transfers Transfer[]
+}
+
+model Config {
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  data_type String
+  value     String
+}
+
+model BalanceType {
+  id       String    @id
+  name     String    @unique
+  balances Balance[]
+}
+
+model TransactionStatus {
+  id           String        @id
+  name         String        @unique
+  transactions Transaction[]
+}
+
+model Category {
+  id           Int          @id @default(autoincrement())
+  name         String       @unique
+  image_url    String?
+  jastip_items JastipItem[]
+}
+
+model BankAccount {
+  id             Int        @id @default(autoincrement())
+  account_name   String
+  account_number String
+  user_id        Int
+  user           User       @relation(fields: [user_id], references: [id])
+  bank_id        Int
+  bank           Bank       @relation(fields: [bank_id], references: [id])
+  transfers      Transfer[]
+}
+
+model Profile {
+  id          Int       @id @default(autoincrement())
+  phone       String?
+  whatsapp    String?
+  address     String?
+  user_id     Int       @unique
+  user        User      @relation(fields: [user_id], references: [id])
+  image_url   String?
+  province_id Int?      @unique
+  province    Province? @relation(fields: [province_id], references: [id])
+}
+
+model Balance {
+  id              Int           @id @default(autoincrement())
+  user_id         Int
+  user            User          @relation(fields: [user_id], references: [id])
+  status          BalanceStatus
+  amount          Decimal       @default(0)
+  balance_type_id String
+  balance_type    BalanceType   @relation(fields: [balance_type_id], references: [id])
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+}
+
+model Jastip {
+  id           Int           @id @default(autoincrement())
+  user_id      Int
+  user         User          @relation(fields: [user_id], references: [id])
+  title        String
+  description  String
+  province_id  Int
+  province     Province      @relation(fields: [province_id], references: [id])
+  tip          Decimal       @default(0)
+  is_available Boolean       @default(true)
+  jastip_items JastipItem[]
+  transactions Transaction[]
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+}
+
+model JastipItem {
+  id                Int               @id @default(autoincrement())
+  name              String
+  jastip_id         Int
+  jastip            Jastip            @relation(fields: [jastip_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  category_id       Int
+  category          Category          @relation(fields: [category_id], references: [id])
+  price             Decimal           @default(0)
+  quantity          Int               @default(0)
+  link_referensi    String?
+  image_url         String?
+  transaction_items TransactionItem[]
+  created_at        DateTime          @default(now())
+  updated_at        DateTime          @updatedAt
+}
+
+model Transaction {
+  id                    Int                   @id @default(autoincrement())
+  jastip_id             Int
+  jastip                Jastip                @relation(fields: [jastip_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  seller_id             Int
+  seller                User                  @relation(fields: [seller_id], references: [id], name: "seller")
+  shipping_fee          Decimal               @default(0)
+  shipping_image_url    String?
+  shipping_note         String?
+  transaction_status_id String
+  transaction_status    TransactionStatus     @relation(fields: [transaction_status_id], references: [id])
+  transaction_items     TransactionItem[]
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  transaction_transfers TransactionTransfer[]
+}
+
+model TransactionItem {
+  id             Int         @id @default(autoincrement())
+  transaction_id Int
+  transaction    Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  jastip_item_id Int
+  jastip_item    JastipItem  @relation(fields: [jastip_item_id], references: [id])
+  price          Decimal     @default(0)
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+}
+
+model Transfer {
+  id                    Int                   @id @default(autoincrement())
+  bank_account_id       Int
+  bank_account          BankAccount           @relation(fields: [bank_account_id], references: [id])
+  amount                Decimal               @default(0)
+  transfer_status_id    String
+  transfer_status       TransferStatus        @relation(fields: [transfer_status_id], references: [id])
+  attachment_url        String?
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  transaction_transfers TransactionTransfer[]
+}
+
+model TransactionTransfer {
+  id             Int                     @id @default(autoincrement())
+  transfer_id    Int
+  transfer       Transfer                @relation(fields: [transfer_id], references: [id])
+  transaction_id Int
+  transaction    Transaction             @relation(fields: [transaction_id], references: [id])
+  type           TransactionTransferType
+  created_at     DateTime                @default(now())
+  updated_at     DateTime                @updatedAt
+}
