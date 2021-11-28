@@ -1,20 +1,22 @@
 import React from "react";
 import { getUser } from "~/utils/session.server";
-import { redirect, useLoaderData, Link } from "remix";
+import { redirect, useLoaderData } from "remix";
 import type { MetaFunction, LoaderFunction } from "remix";
 import {
-  Jastip,
-  Transaction,
-  TransactionStatus,
-  TransactionTransfer,
   Transfer,
   User,
   Bank,
   BankAccount,
   Province,
+  Withdraw,
+  TransferStatus,
+  Balance,
+  BalanceType,
+  Profile,
 } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import axios from "axios";
+import Header from "~/components/Header";
 
 export const meta: MetaFunction = () => {
   return {
@@ -25,20 +27,17 @@ export const meta: MetaFunction = () => {
 
 type LoaderData = {
   user: User | null;
-  transactions: (TransactionTransfer & {
-    transaction: Transaction & {
-      transaction_status: TransactionStatus;
-      jastip: Jastip & {
-        province: Province;
-        user: User;
-      };
-    };
+  withdraws: (Withdraw & {
     transfer: Transfer & {
+      transfer_status: TransferStatus;
       bank_account: BankAccount & {
         bank: Bank;
       };
-      transfer_status: TransactionStatus;
     };
+    balance: Balance & {
+      balance_type: BalanceType;
+    };
+    user: User;
   })[];
 };
 
@@ -47,24 +46,11 @@ export const loader: LoaderFunction = async ({ request }) => {
   if (!user) {
     return redirect("/login");
   }
-  const transactions = await db.transactionTransfer.findMany({
+  const withdraws = await db.withdraw.findMany({
     orderBy: {
-      transfer: {
-        updated_at: "desc",
-      },
+      created_at: "desc",
     },
     include: {
-      transaction: {
-        include: {
-          transaction_status: true,
-          jastip: {
-            include: {
-              province: true,
-              user: true,
-            },
-          },
-        },
-      },
       transfer: {
         include: {
           bank_account: {
@@ -75,9 +61,15 @@ export const loader: LoaderFunction = async ({ request }) => {
           transfer_status: true,
         },
       },
+      balance: {
+        include: {
+          balance_type: true,
+        },
+      },
+      user: true,
     },
   });
-  const data: LoaderData = { user, transactions };
+  const data: LoaderData = { user, withdraws };
   return data;
 };
 
@@ -98,21 +90,14 @@ const Index: React.FC = () => {
       )
       .then((data) => {
         // console.log(data);
-        return redirect("/dashboard");
+        return redirect("/transfer");
       })
       .catch((e) => console.log(`${type} Error: ${e}`));
   };
   return (
     <div className="w-full min-h-screen flex flex-col px-4 md:px-8 py-8">
-      <div className="px-8 py-4 rounded-md bg-gray-900 text-gray-200 mb-4 flex justify-between items-center">
-        <h1>Dashboard</h1>
-        <Link
-          to="/logout"
-          className="border rounded-md border-gray-400 px-4 py-1"
-        >
-          Logout
-        </Link>
-      </div>
+      <Header />
+      <pre>{JSON.stringify(data.withdraws, null, 2)}</pre>
       <table>
         <thead>
           <tr className="flex mb-4 bg-gray-700 px-6 py-4 rounded">
@@ -127,7 +112,7 @@ const Index: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {data.transactions?.map((item, key) => {
+          {/* {data.withdraws?.map((item, key) => {
             return (
               <tr
                 key={key}
@@ -226,7 +211,7 @@ const Index: React.FC = () => {
                 </td>
               </tr>
             );
-          })}
+          })} */}
         </tbody>
       </table>
     </div>

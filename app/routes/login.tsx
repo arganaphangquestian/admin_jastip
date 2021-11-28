@@ -21,7 +21,7 @@ type ActionData = {
 export const loader: LoaderFunction = async ({ request }) => {
   let user = await getUser(request);
   if (user) {
-    return redirect("/dashboard");
+    return redirect("/transfer");
   }
   return null;
 };
@@ -32,7 +32,7 @@ export const action: ActionFunction = async ({
   const form = await request.formData();
   const email = form.get("email");
   const password = form.get("password");
-  const redirectTo = form.get("redirectTo") || "/dashboard";
+  const redirectTo = form.get("redirectTo") || "/transfer";
   if (
     typeof email !== "string" ||
     typeof password !== "string" ||
@@ -60,7 +60,7 @@ const Index: React.FC = () => {
             type="text"
             name="email"
             placeholder="johndoe@mail.com"
-            defaultValue="johndoe@mail.com"
+            defaultValue="admin@mail.com"
             className="bg-transparent outline-none border-2 rounded-md px-8 py-4 border-gray-700"
           />
         </div>

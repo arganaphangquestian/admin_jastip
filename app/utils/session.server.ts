@@ -61,9 +61,10 @@ export async function getUser(request: Request) {
 
 export async function logout(request: Request) {
   let session = await getUserSession(request);
-  return redirect(`/dashboard`, {
+  const res = await storage.destroySession(session);
+  return redirect(`/transfer`, {
     headers: {
-      "Set-Cookie": await storage.destroySession(session),
+      "Set-Cookie": res,
     },
   });
 }

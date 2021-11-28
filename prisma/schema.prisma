@@ -35,6 +35,7 @@ model User {
   balances          Balance[]
   jastips           Jastip[]
   sell_transactions Transaction[] @relation("seller")
+  Withdraw          Withdraw[]
 }
 
 model Bank {
@@ -117,6 +118,7 @@ model Balance {
   balance_type    BalanceType   @relation(fields: [balance_type_id], references: [id])
   created_at      DateTime      @default(now())
   updated_at      DateTime      @updatedAt
+  Withdraw        Withdraw[]
 }
 
 model Jastip {
@@ -190,6 +192,19 @@ model Transfer {
   created_at            DateTime              @default(now())
   updated_at            DateTime              @updatedAt
   transaction_transfers TransactionTransfer[]
+  Withdraw              Withdraw[]
+}
+
+model Withdraw {
+  id          Int      @id @default(autoincrement())
+  transfer_id Int
+  transfer    Transfer @relation(fields: [transfer_id], references: [id])
+  user_id     Int
+  user        User     @relation(fields: [user_id], references: [id])
+  balance_id  Int
+  balance     Balance  @relation(fields: [balance_id], references: [id])
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 }
 
 model TransactionTransfer {
