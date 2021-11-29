@@ -7,16 +7,15 @@ import {
   User,
   Bank,
   BankAccount,
-  Province,
   Withdraw,
   TransferStatus,
   Balance,
   BalanceType,
-  Profile,
 } from "@prisma/client";
 import { db } from "~/utils/db.server";
 import axios from "axios";
 import Header from "~/components/Header";
+import dayjs from "dayjs";
 
 export const meta: MetaFunction = () => {
   return {
@@ -76,43 +75,33 @@ export const loader: LoaderFunction = async ({ request }) => {
 const Index: React.FC = () => {
   let data = useLoaderData<LoaderData>();
 
-  const onValidateHandler = (
-    transaction_id: number,
-    transfer_id: number,
-    type: string
-  ) => {
+  const onValidateHandler = (withdraw_id: number, type: string) => {
     axios
-      .post(
-        `https://jastip.arganaphang.dev/transaction/${transaction_id}/validate-transfer/${transfer_id}`,
-        {
-          type: type,
-        }
-      )
+      .post(`https://jastip.arganaphang.dev/withdraw/${withdraw_id}/validate`, {
+        type: type,
+      })
       .then((data) => {
         // console.log(data);
-        return redirect("/transfer");
+        return redirect("/withdraw");
       })
       .catch((e) => console.log(`${type} Error: ${e}`));
   };
   return (
     <div className="w-full min-h-screen flex flex-col px-4 md:px-8 py-8">
       <Header />
-      <pre>{JSON.stringify(data.withdraws, null, 2)}</pre>
       <table>
         <thead>
           <tr className="flex mb-4 bg-gray-700 px-6 py-4 rounded">
             <th className="mr-4">No</th>
             <th className="mr-4 flex-1">User</th>
-            <th className="mr-4 flex-1">Jastip Title</th>
             <th className="mr-4 flex-1">Amount</th>
-            <th className="mr-4 flex-1">Transfer Type</th>
-            <th className="mr-4 flex-1">Attachment</th>
+            <th className="mr-4 flex-1">Date</th>
             <th className="mr-4 flex-1">Status</th>
             <th className="mr-4 flex-1">Action</th>
           </tr>
         </thead>
         <tbody>
-          {/* {data.withdraws?.map((item, key) => {
+          {data.withdraws?.map((item, key) => {
             return (
               <tr
                 key={key}
@@ -122,7 +111,7 @@ const Index: React.FC = () => {
                   {item.id}
                 </td>
                 <td className="mr-4 flex-1 text-left">
-                  {item.transaction.jastip.user.name}
+                  {item.user.name}
                   <details>
                     <ul className="text-left">
                       <li className="px-2 py-1 rounded-md bg-gray-500 mb-2">
@@ -138,46 +127,35 @@ const Index: React.FC = () => {
                   </details>
                 </td>
                 <td className="mr-4 flex-1 text-center">
-                  {item.transaction.jastip.title}
-                </td>
-                <td className="mr-4 flex-1 text-center">
                   {item.transfer.amount}
                 </td>
                 <td className="mr-4 flex-1 text-center">
-                  Pembayaran{" "}
-                  {item.type === "TRANSACTION_PAYMENT" ? "Jastip" : "Ekspedisi"}
+                  {dayjs(item.created_at).format("DD-MMM-YYYY (hh:mm)")}
                 </td>
                 <td className="mr-4 flex-1 text-center">
-                  <a
-                    href={`${item.transfer.attachment_url}`}
-                    target="_blank"
-                    className="underline"
-                  >
-                    Detail
-                  </a>
-                </td>
-                <td className="flex-1 text-center">
-                  {item.transfer.transfer_status.name}
+                  {item.transfer.transfer_status.id === "PENDING"
+                    ? "Menunggu diproses"
+                    : item.transfer.transfer_status.id === "VERIFIED"
+                    ? "Penarikan dana terverifikasi"
+                    : item.transfer.transfer_status.id === "REJECTED"
+                    ? "Penarikan dana ditolak"
+                    : item.transfer.transfer_status.name}
                 </td>
                 <td className="flex-1 text-center">
                   <button
-                    onClick={() =>
-                      onValidateHandler(
-                        item.transaction_id,
-                        item.transfer_id,
-                        "VERIFIED"
-                      )
-                    }
+                    onClick={() => onValidateHandler(item.id, "VERIFIED")}
                     className={
                       "sm:mr-2 mb-2 sm:mb-0 px-4 py-1 rounded-md " +
                       `${
-                        item.transfer.transfer_status.id === "PROCESSING"
+                        item.transfer.transfer_status.id === "PROCESSING" ||
+                        item.transfer.transfer_status.id === "PENDING"
                           ? "text-green-100 bg-green-400"
                           : "text-gray-600 cursor-not-allowed"
                       }`
                     }
                     disabled={
-                      item.transfer.transfer_status.id !== "PROCESSING"
+                      item.transfer.transfer_status.id !== "PROCESSING" &&
+                      item.transfer.transfer_status.id !== "PENDING"
                         ? true
                         : false
                     }
@@ -185,23 +163,19 @@ const Index: React.FC = () => {
                     Accept
                   </button>
                   <button
-                    onClick={() =>
-                      onValidateHandler(
-                        item.transaction_id,
-                        item.transfer_id,
-                        "REJECTED"
-                      )
-                    }
+                    onClick={() => onValidateHandler(item.id, "REJECTED")}
                     className={
                       "px-4 py-1 rounded-md  " +
                       `${
-                        item.transfer.transfer_status.id === "PROCESSING"
+                        item.transfer.transfer_status.id === "PROCESSING" ||
+                        item.transfer.transfer_status.id === "PENDING"
                           ? "text-red-100 bg-red-400"
                           : "text-gray-600 cursor-not-allowed"
                       }`
                     }
                     disabled={
-                      item.transfer.transfer_status.id !== "PROCESSING"
+                      item.transfer.transfer_status.id !== "PROCESSING" &&
+                      item.transfer.transfer_status.id !== "PENDING"
                         ? true
                         : false
                     }
@@ -211,7 +185,7 @@ const Index: React.FC = () => {
                 </td>
               </tr>
             );
-          })} */}
+          })}
         </tbody>
       </table>
     </div>
